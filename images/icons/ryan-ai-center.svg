@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="AI Center">
+  <title>AI Center</title>
+  <defs>
+    <linearGradient id="aiCenterBg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#35C6FF"/>
+      <stop offset="0.48" stop-color="#0B8CE6"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <rect x="48" y="48" width="416" height="416" rx="108" fill="url(#aiCenterBg)"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="10" stroke-linecap="round">
+    <line x1="182" y1="158" x2="330" y2="158"/>
+    <line x1="182" y1="158" x2="256" y2="250"/>
+    <line x1="330" y1="158" x2="256" y2="250"/>
+  </g>
+  <g fill="#FFFFFF">
+    <circle cx="182" cy="158" r="23"/>
+    <circle cx="330" cy="158" r="23"/>
+    <circle cx="256" cy="250" r="23"/>
+  </g>
+  <text x="256" y="418" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="122" font-weight="bold" fill="#FFFFFF" letter-spacing="2">AI</text>
+</svg>

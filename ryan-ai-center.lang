@@ -1,0 +1,97 @@
+[en-us]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "A navigation portal that gathers AI tools and software testing resources in one place, covering AI chatbots, large model platforms, testing toolchains, test device inventory and bug management."
+release_note = "1. Initial release."
+important = ""
+
+[zh-cn]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "一站式汇集 AI 工具与软件测试资源的导航门户，涵盖 AI 聊天机器人、大模型平台、测试工具箱、测试设备清单与 Bug 管理。"
+release_note = "1. 首次发布。"
+important = ""
+
+[zh-hk]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "一站式彙集 AI 工具與軟件測試資源的導航門戶，涵蓋 AI 聊天機械人、大模型平台、測試工具箱、測試裝置清單與 Bug 管理。"
+release_note = "1. 首次發佈。"
+important = ""
+
+[fr-fr]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "Un portail de navigation qui rassemble au même endroit les outils d'IA et les ressources de test logiciel : chatbots d'IA, plateformes de grands modèles, chaîne d'outils de test, inventaire des appareils de test et gestion des anomalies."
+release_note = "1. Version initiale."
+important = ""
+
+[de-de]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "Ein Navigationsportal, das KI-Werkzeuge und Ressourcen für Softwaretests an einem Ort bündelt: KI-Chatbots, Plattformen für große Modelle, Test-Toolchain, Testgeräteliste und Fehlerverwaltung."
+release_note = "1. Erstveröffentlichung."
+important = ""
+
+[it-it]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "Un portale di navigazione che raccoglie in un unico posto strumenti di IA e risorse per il test del software: chatbot IA, piattaforme di modelli di grandi dimensioni, toolchain di test, inventario dei dispositivi di test e gestione dei bug."
+release_note = "1. Versione iniziale."
+important = ""
+
+[es-es]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "Un portal de navegación que reúne en un solo lugar herramientas de IA y recursos de pruebas de software: chatbots de IA, plataformas de modelos grandes, cadena de herramientas de prueba, inventario de dispositivos de prueba y gestión de errores."
+release_note = "1. Versión inicial."
+important = ""
+
+[hu-hu]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "Egy navigációs portál, amely egy helyen gyűjti össze az AI-eszközöket és a szoftvertesztelési erőforrásokat: AI csevegőrobotok, nagymodell-platformok, teszteszközkészlet, teszteszköz-leltár és hibakezelés."
+release_note = "1. Első kiadás."
+important = ""
+
+[ja-jp]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "AI ツールとソフトウェアテストのリソースを一か所に集約するナビゲーションポータルです。AI チャットボット、大規模モデルプラットフォーム、テストツールチェーン、テスト端末一覧、バグ管理を網羅します。"
+release_note = "1. 初回リリース。"
+important = ""
+
+[ko-kr]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "AI 도구와 소프트웨어 테스트 리소스를 한곳에 모은 내비게이션 포털입니다. AI 챗봇, 대규모 모델 플랫폼, 테스트 도구 모음, 테스트 장비 목록, 버그 관리를 포함합니다."
+release_note = "1. 최초 릴리스."
+important = ""
+
+[pl-pl]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "Portal nawigacyjny gromadzący w jednym miejscu narzędzia AI i zasoby do testowania oprogramowania: chatboty AI, platformy dużych modeli, zestaw narzędzi testowych, spis urządzeń testowych i zarządzanie błędami."
+release_note = "1. Pierwsze wydanie."
+important = ""
+
+[ru-ru]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "Навигационный портал, объединяющий в одном месте инструменты ИИ и ресурсы для тестирования ПО: чат-боты ИИ, платформы больших моделей, набор инструментов тестирования, список тестовых устройств и управление ошибками."
+release_note = "1. Первый выпуск."
+important = ""
+
+[tr-tr]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "Yapay zeka araçlarını ve yazılım test kaynaklarını tek bir yerde toplayan bir gezinme portalı: yapay zeka sohbet botları, büyük model platformları, test araç zinciri, test cihaz envanteri ve hata yönetimi."
+release_note = "1. İlk sürüm."
+important = ""
+
+[pt-pt]
+name = "AI Center"
+auth = "RyanYang163"
+descript = "Um portal de navegação que reúne num só lugar ferramentas de IA e recursos de teste de software: chatbots de IA, plataformas de grandes modelos, conjunto de ferramentas de teste, inventário de dispositivos de teste e gestão de erros."
+release_note = "1. Versão inicial."
+important = ""

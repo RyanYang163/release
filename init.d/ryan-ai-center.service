@@ -1,0 +1,56 @@
+[Unit]
+Description=AI Center - AI tools and software testing resources portal
+Documentation=https://github.com/RyanYang163/AI-Center
+After=network.target
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Service]
+Type=simple
+User=ryan-ai-center
+Group=ryan-ai-center
+WorkingDirectory=/usr/local/ryan-ai-center
+ExecStart=/usr/local/ryan-ai-center/bin/ai-center-server
+EnvironmentFile=/usr/local/ryan-ai-center/ryan-ai-center.env
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# --- Required hardening (TOS 7 review standard, section 12.7) ---
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+
+# Only application-owned paths are writable.
+# /var/api is required: the platform proxy socket is created there at startup.
+# ProtectSystem=strict would otherwise make it read-only and the bind() would
+# fail with EROFS, so it must be listed here explicitly.
+ReadWritePaths=/var/api /var/lib/ryan-ai-center
+
+# --- Recommended hardening ---
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RemoveIPC=true
+SystemCallArchitectures=native
+
+# --- Resource limits (TOS web-service profile: 1 core / 512 MB) ---
+LimitNOFILE=65536
+LimitNPROC=256
+MemoryMax=512M
+CPUQuota=100%
+
+# --- Restart policy (executed by the App Center) ---
+Restart=on-failure
+RestartSec=10
+
+# Note: AmbientCapabilities=CAP_NET_BIND_SERVICE is intentionally absent.
+# This application binds no TCP port at all; it serves exclusively over the
+# Unix socket at /var/api/ryan-ai-center.sock.
+
+[Install]
+WantedBy=multi-user.target
