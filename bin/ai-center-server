@@ -26,6 +26,7 @@ import os
 import posixpath
 import signal
 import socket
+import socketserver
 import sys
 import threading
 import time
@@ -330,6 +331,17 @@ class TcpHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
     request_queue_size = LISTEN_BACKLOG
+
+    def server_bind(self):
+        # Bind without BaseHTTPServer's socket.getfqdn() reverse lookup.
+        # On the test TNAS that lookup alone delayed startup by ~5 seconds
+        # (measured: 11:58:00 "starting" -> 11:58:05 "listening"), and against
+        # an unreachable DNS server it can block far longer - long enough to
+        # trip the unit's TimeoutStartSec=30 and leave the app dead. The
+        # resolved name is only used by CGI, which this server does not do.
+        socketserver.TCPServer.server_bind(self)
+        self.server_name = self.server_address[0]
+        self.server_port = self.server_address[1]
 
 
 class UnixSocketHTTPServer(ThreadingHTTPServer):
