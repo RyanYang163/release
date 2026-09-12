@@ -7,8 +7,14 @@ StartLimitIntervalSec=60
 
 [Service]
 Type=simple
+# User= only — do NOT add Group=.
+# The TOS platform creates the application user with the pre-existing
+# "allusers" group as its primary group; it does not create a group named
+# after the application. systemd resolves Group= at start time, so
+# `Group=ryan-ai-center` fails with status 216/GROUP and the service never
+# starts, even though the user exists. Omitting Group= makes systemd use the
+# user's primary group (allusers). Verified on a TNAS running TOS 7.
 User=ryan-ai-center
-Group=ryan-ai-center
 WorkingDirectory=/usr/local/ryan-ai-center
 ExecStart=/usr/local/ryan-ai-center/bin/ai-center-server
 EnvironmentFile=/usr/local/ryan-ai-center/ryan-ai-center.env
@@ -27,7 +33,14 @@ ProtectHome=true
 ReadWritePaths=/var/api /var/lib/ryan-ai-center
 
 # --- Recommended hardening ---
-PrivateTmp=true
+# PrivateTmp= is deliberately NOT set.
+# On TOS /var/api is a symlink to /tmp/api, and this application must bind
+# /var/api/ryan-ai-center.sock there. PrivateTmp= mounts a fresh empty tmpfs
+# over /tmp, so that socket path resolves inside a private namespace that
+# contains no "api" entry: systemd then fails with status 226/NAMESPACE
+# ("Failed to set up mount namespacing: .../tmp/api: No such file or
+# directory"). Even if the namespace came up, the socket would be created in
+# the private tmpfs and stay invisible to the platform proxy.
 PrivateDevices=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
