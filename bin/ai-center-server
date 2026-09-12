@@ -38,8 +38,19 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 # ---------------------------------------------------------------------------
 
 APP_ID = os.environ.get("APP_ID", "ryan-ai-center")
-SOCKET_PATH = os.environ.get("SOCKET_PATH", "/var/api/{}.sock".format(APP_ID))
+
+# --- WebUI External Open (new browser tab) ---
+# LISTEN_HOST must be 0.0.0.0: binding 127.0.0.1 only would make the NAS
+# unreachable from the LAN, which the development guide forbids.
+LISTEN_HOST = os.environ.get("LISTEN_HOST", "0.0.0.0").strip()
+LISTEN_PORT = int(os.environ.get("LISTEN_PORT", "0") or "0")
+
+# --- WebUI Internal Open (iframe) ---
+# Empty in external-open mode. Set to /var/api/<appid>.sock to additionally
+# serve the platform proxy over a Unix socket.
+SOCKET_PATH = os.environ.get("SOCKET_PATH", "").strip()
 SOCKET_MODE = int(os.environ.get("SOCKET_MODE", "0660"), 8)
+
 DOC_ROOT = os.environ.get("DOC_ROOT", "/usr/local/{}".format(APP_ID))
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
@@ -120,11 +131,15 @@ def read_app_version():
 
 
 def current_user():
+    """Best-effort name of the account we run as, for log lines only."""
     try:
         import pwd
         return pwd.getpwuid(os.geteuid()).pw_name
     except Exception:
-        return str(os.geteuid())
+        # No pwd module or no geteuid (e.g. Windows): fall back to the
+        # environment rather than crashing at startup.
+        return (os.environ.get("USER") or os.environ.get("USERNAME")
+                or os.environ.get("LOGNAME") or "unknown")
 
 
 APP_VERSION = read_app_version()
@@ -304,6 +319,19 @@ class RequestHandler(BaseHTTPRequestHandler):
 # HTTP server bound to a Unix domain socket
 # ---------------------------------------------------------------------------
 
+class TcpHTTPServer(ThreadingHTTPServer):
+    """Plain HTTP over TCP — WebUI External Open (opens in a new browser tab).
+
+    The platform's nginx proxies /<app_id>/ to this port, and nginx needs to
+    reach it on 127.0.0.1, so the host is configurable but defaults to 0.0.0.0
+    as the development guide requires.
+    """
+
+    daemon_threads = True
+    allow_reuse_address = True
+    request_queue_size = LISTEN_BACKLOG
+
+
 class UnixSocketHTTPServer(ThreadingHTTPServer):
     address_family = AF_UNIX
     daemon_threads = True
@@ -337,11 +365,12 @@ def handle_signal(signum, _frame):
     _SHUTDOWN.set()
 
 
-def watch_for_shutdown(server):
-    # serve_forever() runs on the main thread, so shutdown() has to be called
-    # from another thread or it would deadlock.
+def watch_for_shutdown(servers):
+    # serve_forever() runs on worker threads, so shutdown() has to be called
+    # from yet another thread or it would deadlock.
     _SHUTDOWN.wait()
-    threading.Thread(target=server.shutdown, daemon=True).start()
+    for server in servers:
+        threading.Thread(target=server.shutdown, daemon=True).start()
 
 
 def prepare_socket_path():
@@ -366,24 +395,35 @@ def prepare_socket_path():
     return True
 
 
-def main():
-    log("INFO", "main", "AI Center %s starting as %s" % (APP_VERSION, current_user()))
+def start_tcp_server():
+    """WebUI External Open: the port the platform's nginx proxies to."""
+    if not LISTEN_PORT:
+        return None
+    try:
+        server = TcpHTTPServer((LISTEN_HOST, LISTEN_PORT), RequestHandler)
+    except OSError as exc:
+        log("ERROR", "main", "cannot bind %s:%d - %s" % (LISTEN_HOST, LISTEN_PORT, exc))
+        if exc.errno == errno.EADDRINUSE:
+            log("ERROR", "main", "port %d is already taken; another application "
+                                 "may hold it. Change LISTEN_PORT in "
+                                 "/usr/local/%s/%s.env AND the proxy_pass port in "
+                                 "/usr/local/%s/nginx/%s.conf to match."
+                % (LISTEN_PORT, APP_ID, APP_ID, APP_ID, APP_ID))
+        return None
+    log("INFO", "main", "listening on %s:%d (tcp)" % (LISTEN_HOST, LISTEN_PORT))
+    return server
 
+
+def start_unix_server():
+    """WebUI Internal Open: the Unix socket the platform proxy connects to."""
+    if not SOCKET_PATH:
+        return None
     if AF_UNIX is None:
-        log("ERROR", "main", "this Python build has no AF_UNIX support; the TOS "
-                             "WebUI internal-open socket transport requires Linux")
-        return 1
-
-    if not os.path.isdir(DOC_ROOT):
-        log("ERROR", "main", "document root %s does not exist" % DOC_ROOT)
-        log("ERROR", "main", "postinst unpacks webui.bz2 there; reinstall the package")
-        return 1
-
+        log("ERROR", "main", "SOCKET_PATH is set but this Python build has no "
+                             "AF_UNIX support; use LISTEN_PORT instead")
+        return None
     if not prepare_socket_path():
-        return 1
-
-    signal.signal(signal.SIGTERM, handle_signal)
-    signal.signal(signal.SIGINT, handle_signal)
+        return None
 
     try:
         server = UnixSocketHTTPServer(SOCKET_PATH, RequestHandler)
@@ -394,15 +434,14 @@ def main():
             log("ERROR", "main", "%s cannot write to %s" % (current_user(), directory))
             log("ERROR", "main", "remedy: sudo setfacl -m u:%s:rwx %s"
                 % (current_user(), directory))
-        return 1
+        return None
 
-    # The platform proxy must be able to connect to the socket: mode 0660,
-    # owned by the service user and group.
+    # The platform proxy must be able to connect: mode 0660, owned by the
+    # service user and group.
     try:
         os.chmod(SOCKET_PATH, SOCKET_MODE)
     except OSError as exc:
         log("WARN", "main", "cannot chmod %s: %s" % (SOCKET_PATH, exc))
-
     try:
         import pwd
         entry = pwd.getpwnam(APP_ID)
@@ -410,24 +449,66 @@ def main():
     except (ImportError, KeyError, OSError):
         pass
 
-    log("INFO", "main", "listening on %s (mode %04o), serving %s"
-        % (SOCKET_PATH, SOCKET_MODE, DOC_ROOT))
-    log("INFO", "main", "log level %s" % LOG_LEVEL)
+    log("INFO", "main", "listening on %s (unix socket, mode %04o)"
+        % (SOCKET_PATH, SOCKET_MODE))
+    return server
 
-    threading.Thread(target=watch_for_shutdown, args=(server,), daemon=True).start()
+
+def main():
+    log("INFO", "main", "AI Center %s starting as %s" % (APP_VERSION, current_user()))
+
+    if not os.path.isdir(DOC_ROOT):
+        log("ERROR", "main", "document root %s does not exist" % DOC_ROOT)
+        log("ERROR", "main", "postinst unpacks webui.bz2 there; reinstall the package")
+        return 1
+
+    if not LISTEN_PORT and not SOCKET_PATH:
+        log("ERROR", "main", "no listener configured - set LISTEN_PORT for WebUI "
+                             "External Open, or SOCKET_PATH for iframe mode, in "
+                             "/usr/local/%s/%s.env" % (APP_ID, APP_ID))
+        return 1
+
+    if LISTEN_PORT and LISTEN_HOST not in ("0.0.0.0", "::"):
+        log("WARN", "main", "LISTEN_HOST is %s - the development guide requires "
+                            "0.0.0.0, or the NAS is unreachable from the LAN"
+            % LISTEN_HOST)
+
+    signal.signal(signal.SIGTERM, handle_signal)
+    signal.signal(signal.SIGINT, handle_signal)
+
+    servers = [s for s in (start_tcp_server(), start_unix_server()) if s is not None]
+    if not servers:
+        log("ERROR", "main", "no listener could be started")
+        return 1
+
+    log("INFO", "main", "serving %s (log level %s)" % (DOC_ROOT, LOG_LEVEL))
+
+    threads = []
+    for server in servers:
+        thread = threading.Thread(target=server.serve_forever,
+                                  kwargs={"poll_interval": 0.5}, daemon=True)
+        thread.start()
+        threads.append(thread)
+
+    threading.Thread(target=watch_for_shutdown, args=(servers,), daemon=True).start()
 
     try:
-        # poll_interval keeps the loop responsive to the signal handler.
-        server.serve_forever(poll_interval=0.5)
+        _SHUTDOWN.wait()
     except KeyboardInterrupt:
         pass
     finally:
-        server.server_close()
-        try:
-            if os.path.lexists(SOCKET_PATH):
-                os.unlink(SOCKET_PATH)
-        except OSError:
-            pass
+        for server in servers:
+            server.shutdown()
+        for thread in threads:
+            thread.join(timeout=5)
+        for server in servers:
+            server.server_close()
+        if SOCKET_PATH:
+            try:
+                if os.path.lexists(SOCKET_PATH):
+                    os.unlink(SOCKET_PATH)
+            except OSError:
+                pass
         log("INFO", "main", "stopped")
 
     return 0

@@ -26,10 +26,15 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 
-# Only application-owned paths are writable.
-# /var/api is required: the platform proxy socket is created there at startup.
-# ProtectSystem=strict would otherwise make it read-only and the bind() would
-# fail with EROFS, so it must be listed here explicitly.
+# Only application-owned paths are writable; ProtectSystem=strict makes
+# everything else read-only.
+#   /var/lib/ryan-ai-center  runtime state
+#   /var/api                 only used by the iframe fallback - i.e. when the
+#                            environment file sets SOCKET_PATH. Listing it is
+#                            harmless while unused, and required when it is:
+#                            without it the socket bind fails with EROFS.
+# This package runs in WebUI External Open mode (a TCP port + nginx), so
+# /var/api is normally untouched.
 ReadWritePaths=/var/api /var/lib/ryan-ai-center
 
 # --- Recommended hardening ---
